@@ -30,16 +30,29 @@ const Topbar = () => {
       try {
         const res = await api.get('/tasks');
         const today = new Date();
+        today.setHours(0, 0, 0, 0);
         const alerts = [];
         res.data.forEach(task => {
           if (task.status === 'done' || !task.due_date) return;
           const due = new Date(task.due_date);
-          const diff = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
-          if (diff < 0)   alerts.push({ message: task.title + ' is overdue',          type: 'error'   });
-          else if (diff <= 2) alerts.push({ message: task.title + ' due in ' + diff + ' day(s)', type: 'warning' });
+          due.setHours(0, 0, 0, 0);
+          const diffDays = Math.round((due - today) / (1000 * 60 * 60 * 24));
+          if (diffDays < 0) {
+            alerts.push({
+              message: '⚠️ ' + task.title + ' — overdue by ' + Math.abs(diffDays) + ' day(s)',
+              type: 'error'
+            });
+          } else if (diffDays <= 2) {
+            alerts.push({
+              message: '🔔 ' + task.title + ' — due in ' + diffDays + ' day(s)',
+              type: 'warning'
+            });
+          }
         });
         setNotifs(alerts);
-      } catch {}
+      } catch (err) {
+        console.error(err);
+      }
     };
     fetchNotifs();
     const iv = setInterval(fetchNotifs, 60000);
@@ -67,7 +80,7 @@ const Topbar = () => {
             )}
           </button>
           {showNotifs && (
-            <div style={{ position: 'absolute', top: '42px', right: '0', width: '280px', background: t.surface, border: '0.5px solid ' + t.border, borderRadius: '10px', padding: '12px', zIndex: 100, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
+            <div style={{ position: 'absolute', top: '42px', right: '0', width: '300px', background: t.surface, border: '0.5px solid ' + t.border, borderRadius: '10px', padding: '12px', zIndex: 100, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
               <div style={{ fontSize: '11px', fontWeight: '600', color: t.textMuted, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '10px' }}>Notifications</div>
               {notifs.length === 0 && <p style={{ fontSize: '12px', color: t.textMuted, textAlign: 'center', padding: '12px' }}>No alerts</p>}
               {notifs.map((n, i) => (
